@@ -1,0 +1,414 @@
+/*! yomoso-brand v8 — blogdeco.py 가 만든다.
+   화면에서 고치지 말 것: 다음 생성 때 덮인다. 문구·색을 바꾸려면 blogdeco.py 를 고치고
+   `python blogdeco.py --only blogger` 로 다시 뽑는다. 되돌리려면 이 블록만 지우면 된다.
+   v3 이 바꾼 것은 인기 블로그 30곳 실측(docs/BLOGGER-TOP30-DESIGN.md)이 가리킨 자리만이다.
+   v5 는 어두운 화면 대응을 걷어내고 밝은 화면 하나로 고정한다 (2026-08-26 사용자 지시).
+   v7 은 글 목록이 시작되기 전 여백을 줄인다 (2026-08-26 사용자 지시).
+   v8 은 첫 화면과 글 목록을 네이버 블로그와 같은 모양으로 맞춘다 (2026-08-27 사용자 지시) —
+   전면 배너 + 3열 미니카드. 자세한 사정은 docs/BLOGGER-BRAND.md 의 `## v8` 절에 있다. */
+
+/* 기기 설정이 어두워도 이 블로그는 밝다. 네이버 블로그도 그렇고, 인기 블로그 30곳 중
+   어두운 화면을 지원하는 곳도 0곳이다. `only` 를 붙여야 브라우저가 스크롤바·입력칸처럼
+   자기가 직접 그리는 부품까지 밝은 쪽으로 그린다. */
+html {
+  color-scheme: only light;
+}
+
+/* 배경 — 크림 바탕 + 코랄 점무늬. 워드마크 헤더와 같은 무늬라 얼굴이 갈라지지 않는다.
+   이미지가 아니라 그라데이션이라 이음매가 없고 따로 불러올 파일도 없다. */
+html body {
+  background-color: #FFF3E4;
+  background-image: radial-gradient(rgba(255, 107, 74, 0.12) 2px, transparent 2px);
+  background-size: 29px 29px;
+  color: #3A4250;
+  font-family: 'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕','Noto Sans CJK KR',Roboto,sans-serif;
+  /* 한글은 어절 단위로 끊어야 읽힌다. 테마 기본값(word-break:break-word)은 한글을 글자
+     아무 데서나 자른다 — 좁은 사이드바에서 "블로그예/요" 처럼 끊긴다. keep-all 은 띄어쓰기
+     에서만 끊는다. 이건 소개글뿐 아니라 본문·제목까지 블로그 전체에 걸린다. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;   /* 긴 URL 한 줄이 칸을 밀어내는 것만 예외로 끊는다 */
+}
+
+/* 헤더 뒤 스톡 사진 자리 — Contempo 는 기본으로 남의 풍경 사진을 480px 띠로 깐다.
+   테마 > 백그라운드에서 그 사진을 지우면 회색 판(.bg-photo #eeeeee)과 그 위를 덮는
+   검은 스크림(.bg-photo-overlay 26%)만 남는다(2026-08-25 실측). 둘 다 투명으로 두면
+   크림 배경이 화면 맨 위까지 이어진다. */
+body .bg-photo, body .bg-photo-overlay {
+  background-color: transparent;
+  background-image: none;
+}
+
+/* 본문·발췌 글자 — v2 는 `html body` 에만 색을 걸었다. Contempo 가 `.post-body` 와
+   발췌문에 자기 회색을 다시 칠하기 때문에, 그 색이 실제로 화면에 나온다.
+
+   글 본문은 발행할 때 심는 스타일이 이미 잡고 있어 지금도 읽힌다(#2A2F38, 흰 판 대비 13.4).
+   문제는 그 스타일이 없는 자리다 — **인기글·목록 발췌문이 회색 #757575 로 남아 대비 3.97**
+   이었고(2026-08-26 라이브 실측, 읽기 기준 4.5 미달), 글 안 스타일이 붙기 전에 올린 옛 글도
+   같은 처지다. 그래서 같은 값을 한 단계 더 구체적인 선택자로 덮는다. */
+body .post-body, body .post-body p, body .post-body li,
+body .post-body span, body .post-body div,
+body .snippet-item, body .post-snippet {
+  color: #2A2F38;
+}
+
+/* 한글 글꼴 — `html body` 에만 걸었더니 실제 글자에는 안 닿았다. 2026-08-26 라이브에서
+   본문·목록·사이드바 어디를 재도 계산된 글꼴이 `Roboto, sans-serif` 였다(테마가 더
+   구체적인 선택자로 다시 지정한다). Roboto 에는 한글이 없어 기기마다 다른 글꼴로 떨어진다 —
+   블로그 얼굴이 기기마다 갈린다는 뜻이다. 색과 같은 자리에 같은 방식으로 덮는다. */
+body .post-body, body .post-body p, body .post-body li, body .post-body span,
+body .post-body h2, body .post-body h3, body .post-body h4,
+body .post-title, body .post-title a, body .snippet-item,
+body .widget, body .sidebar-container .widget .title, body .Label a {
+  font-family: 'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕','Noto Sans CJK KR',Roboto,sans-serif;
+}
+
+/* 읽기 열 폭 — 발행할 때 글 안에 심는 스타일과 **같은 값**이다(blogdeco.BLOGGER_POST).
+   글 안 스타일이 없는 글(예전에 올린 글)에서도 같은 폭으로 읽히게 하는 안전망이라,
+   둘이 어긋나면 어느 쪽이 이기느냐에 따라 화면이 달라진다. 테스트가 일치를 강제한다. */
+body .post-body.entry-content {
+  max-width: 680px;
+  margin-right: auto;
+}
+
+/* 소제목 — 우리 글은 소제목이 12개다(30곳 중앙 0). 그만큼 소제목이 흐름을 나누는
+   장치인데 테마는 앞뒤 여백이 같아서 어디서 끊기는지가 안 보인다. 위를 벌린다. */
+body .post-body h2, body .post-body h3, body .post-body h4 {
+  color: #1E2430;
+  margin-top: 2.1em;
+  margin-bottom: .55em;
+}
+
+/* 본문 이미지·표 — 표는 우리 자산이다(방송연예 상위 15편 중 표를 쓴 곳은 2곳뿐).
+   테마에 표 스타일이 아예 없어 맨 줄로 나오던 것을 크림 머리행 + 얇은 선으로 세운다. */
+body .post-body img {
+  border-radius: 14px;
+}
+body .post-body table {
+  border-collapse: collapse;
+}
+body .post-body th {
+  background-color: #F6F4EF;
+  color: #1E2430;
+}
+body .post-body th, body .post-body td {
+  border: 1px solid #E7E2D8;
+  padding: 9px 10px;
+}
+
+/* 링크·버튼 — 테마 기본이 머티리얼 파랑이라 크림 배경에서 남의 색으로 뜬다 */
+body a, body a:visited, body a:hover,
+body .blog-pager a, body .blog-pager a:visited, body .blog-pager a:hover,
+body .comment-link,
+body .extendable .show-more, body .extendable .show-less,
+body .widget.Profile .profile-link, body .widget.Profile .profile-link.visit-profile {
+  color: #B7391A;
+}
+body .extendable .show-more, body .extendable .show-less {
+  border-color: #FF6B4A;
+}
+
+/* 첫 화면 = 네이버 블로그와 같은 전면 배너 (v8, 2026-08-27 사용자 지시)
+
+   Blogger 헤더는 `<a class=header-image-wrapper><img></a>` 한 겹이고, 그 그림이 본문 열
+   (890px) 안에 갇혀 있다. 네이버는 배너를 화면 폭 전체에 깐다. 같은 인상을 내려면 그림을
+   열 밖으로 꺼내야 하는데, 자리를 옮기지 않고 폭만 넓히는 방법이 `100vw` + 음수 왼쪽
+   여백이다 — 부모의 가운데(50%)에서 화면 절반(50vw)만큼 왼쪽으로 당기면 화면 정가운데에
+   맞는다. 부모를 `position` 이나 `transform` 으로 건드리지 않으므로 테마 배치가 안 깨진다.
+
+   **위쪽 아이콘 줄(햄버거·검색)은 배너 위에 남겨 둔다.** 네이버도 배너 위에 자기 메뉴 줄을
+   33px 두고 시작한다 — 없애는 게 아니라 그 자리와 같은 것이라, 억지로 겹치지 않는다.
+
+   좁은 화면에서는 폭에 맞춰 줄이지 않고 **좌우를 잘라** 쓴다(`object-fit: cover`).
+   1920px 그림을 390px 폰 폭에 맞추면 높이가 114px 이 되고 워드마크도 20% 로 줄어
+   읽히지 않는다. 잘라 쓰면 가운데(워드마크 + 마스코트 얼굴)가 그대로 큰 채로 남는다. */
+body .centered {
+  padding-top: 8px;
+}
+body .centered-top .search .widget.BlogSearch {
+  margin-bottom: 0;
+}
+body .centered-top .blog-name,
+body .centered-top .blog-name .widget.Header,
+body .centered-top .blog-name .header-widget {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 0;
+}
+body .centered-top .blog-name .header-image-wrapper {
+  display: block;
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+}
+body .centered-top .blog-name .header-image-wrapper img {
+  /* **원본 파일을 직접 그린다.** 테마가 헤더에 걸어 주는 `srcset` 은 800w 까지뿐이라,
+     화면 폭 전체(1440px)로 깔면 800px 그림이 늘어나 워드마크 가장자리에 링이 생긴다
+     (2026-08-27 실측으로 확인). `content` 는 그림만 갈아 끼우므로 `alt`·링크는 그대로
+     남고, 이 규칙이 안 먹는 브라우저에서는 블로거가 주는 그림이 그대로 보인다. */
+  content: url('https://raw.githubusercontent.com/mgk2100/yomoso-assets/main/brand/blogger-banner.jpg');
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1920 / 560;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+@media (max-width: 640px) {
+  body .centered-top .blog-name .header-image-wrapper img {
+    aspect-ratio: 2 / 1;
+  }
+}
+/* 글 화면에서는 같은 그림을 **낮은 띠로 잘라** 쓴다.
+
+   목록은 대문이라 배너가 첫 화면을 채우는 게 맞지만, 글 화면은 검색으로 들어온 독자가
+   본문을 만나러 오는 자리다. 전면 배너를 그대로 두면 글 제목이 화면 절반 아래에서
+   시작한다(실측 1440x900 에서 헤더가 50%) — 2026-08-26 사용자 지시 "첫 화면이 헤더에
+   43% 먹히는 것 줄여줘" 가 그대로 되살아난다.
+
+   그림을 따로 만들지 않는다. 헤더 칸은 블로그에 하나뿐이라 화면마다 다른 파일을 못 준다.
+   대신 세로를 잘라 쓰는데(`cover`), 자르는 자리를 위쪽(30%)에 두어 마스코트 얼굴과
+   워드마크가 남고 발밑 소품만 빠지게 한다. */
+body.item-view .centered-top .blog-name .header-image-wrapper img {
+  aspect-ratio: 1920 / 300;
+  object-position: 50% 30%;
+}
+
+/* 배너 바로 아래 카테고리 줄 — 네이버 프롤로그의 `프롤로그 | 블로그 | 생활정보 | 방송연예`
+   줄과 같은 자리다. 항목 구성은 안 건드린다(2026-08-26 사용자 보류 지시) — 자리와 간격만.
+   위아래 여백 12px 은 **안 줄인다**: 손가락으로 누르는 자리라 42px 아래로 내려가면
+   모바일에서 눌리지 않는다. */
+body .centered-top nav .PageList {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-top: 0;
+}
+
+/* 상단 메뉴 — 2026-08-26 에 메뉴를 켜자마자 잡힌 결함이다. Contempo 는 이 링크를 어두운
+   사진 헤더 위에 얹을 셈으로 `#cccccc` 로 칠하는데, 우리 헤더는 크림이라 **대비 1.47** 로
+   글자가 거의 안 보였다(라이브 실측). 본문과 같은 잉크로 내리고, 가리키는 항목만 링크색으로. */
+body .PageList a, body .PageList li a, body .tabs a, body .tabs-inner a {
+  color: #3A4250;
+}
+body .PageList a:hover, body .PageList li.selected a,
+body .tabs a:hover, body .tabs .selected a {
+  color: #B7391A;
+}
+
+/* 제목 — 회색을 잉크로 내려 본문과 층이 생기게 */
+body .post-title, body .post-title a, body .post-title a:hover, body .post-title a:visited,
+body .sidebar-container .widget .title, body h3 {
+  color: #1E2430;
+}
+
+/* 글 카드·사이드바 판 — 자리는 안 건드리고 색과 모서리만. 순백을 크림 쪽으로 두 눈금 옮기고
+   (`#FFFDF8`), 검정 그림자를 같은 진하기의 갈색으로 바꾼다. 크림 바탕 위에서 순백 + 검정
+   그림자는 판 둘레에 회색 테를 두른 것처럼 보여서, 배경만 따뜻하고 글 읽는 자리는 식어 있었다.
+
+   왼쪽 레일은 한 판이 아니라 **세 겹**이다 — 겉껍데기(`.sidebar-container`, 흰색), 프로필이
+   들어가는 위쪽 판(`.sidebar_top_wrapper`, `#f7f7f7` 회색), 자료실·태그가 들어가는 아래쪽
+   판(`.sidebar_bottom`, 흰색). 겉껍데기만 칠하면 위쪽 회색 판이 그대로 남아 크림 옆에
+   회색 띠가 두 개 생긴다(2026-08-26 좌표로 찍어 확인).
+
+   **판 두 겹은 `.sidebar-container` 를 앞에 붙여야 이긴다.** 테마가 그 자리를
+   `.sidebar-container .sidebar_top_wrapper`(클래스 둘)로 칠하는데, `body .sidebar_top_wrapper`
+   는 요소 하나 + 클래스 하나라 진다. v5 를 라이브에 올린 뒤 계산된 값으로 재 보고 알았다 —
+   CSS 글자는 들어갔는데 화면 색은 안 바뀌어 있었다(위쪽 판 `#f7f7f7`, 아래쪽 판 흰색). */
+body .Blog .blog-posts .post-outer-container, body #page_body .FeaturedPost,
+body .sidebar-container, body .sidebar-container .widget,
+body .sidebar-container .sidebar_top_wrapper, body .sidebar-container .sidebar_bottom {
+  background-color: #FFFDF8;
+}
+body .Blog .blog-posts .post-outer-container, body #page_body .FeaturedPost {
+  border: 1px solid #E8E0D2;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(122, 74, 48, .10);
+}
+body .sidebar-container {
+  box-shadow: 0 2px 10px rgba(122, 74, 48, .10);
+}
+
+/* 발췌문 끝을 덮는 그라데이션 — 테마가 판 색으로 칠해서 글이 스르르 사라지게 만드는 장치다.
+   판 색을 옮겼으니 여기도 같이 옮기지 않으면 발췌문 끝에 흰 얼룩이 남는다.
+
+   자리가 셋이고 **셋 다 테마가 클래스 둘·셋으로 칠한다** — 목록 발췌(`.post-snippet`, 흰색),
+   본문 옆 인기글(`.main .popular-posts-snippet`, `#eeeeee` 회색), 사이드바 인기글
+   (`.sidebar_bottom .popular-posts-snippet`, 흰색). 그래서 우리도 같은 깊이에 `body` 를
+   하나 더 얹어 이긴다. 프로필 발췌는 아래에서 통째로 숨기므로 여기 없다. */
+body .post-snippet .snippet-fade,
+body .main .popular-posts-snippet .snippet-fade,
+body .sidebar_bottom .popular-posts-snippet .snippet-fade {
+  background-image: linear-gradient(to left, #FFFDF8 0, #FFFDF8 20%, rgba(255, 253, 248, 0) 100%);
+}
+
+/* 글 목록 = 네이버 카테고리 섹션과 같은 3열 미니카드 (v8, 2026-08-27 사용자 지시)
+
+   네이버 대문은 두 가지 목록을 쓴다. 위쪽 프롤로그는 **정사각 썸네일 격자**이고, 아래쪽
+   `- 생활정보`·`- 방송연예` 절은 **작은 정사각 그림 + 제목 + 발췌 + 날짜**를 3열로 깐다.
+   블로거에는 뒤엣것을 옮긴다 — 앞엣것은 우리 라이브에서 성립하지 않는다:
+
+   블로거는 목록 썸네일을 **자기가 정사각으로 잘라** 만든다(`=w128-h128-p-k-no-nu`).
+   라이브 6편의 원본이 가로 1200x630 옛 판이라 가운데를 정사각으로 자르면 왼쪽 24%,
+   즉 제목의 앞부분이 날아간다(실측: "…금 / 올까" · "…할증료 / 은 인상"). 큰 격자로
+   키우면 그 잘림이 화면 전체를 덮는다. 그림을 다시 올리려면 글을 다시 발행해야 하는데
+   API 가 계정 제한으로 막혀 있다. 작은 그림 + 글자 위주인 카테고리 섹션 쪽은 그 잘림이
+   눈에 안 띄고, 발췌문이라는 읽을거리도 남는다.
+
+   **글 화면에는 안 건다.** `body.item-view` 가 글 화면이고 목록은 그 클래스가 없다
+   (2026-08-27 실측: 홈 = 없음 · 글 = `item-view` · 라벨 목록 = `label-view`).
+   `:not(.item-view)` 로 잠그지 않으면 글 본문이 3열 격자로 쪼개진다.
+
+   그림을 **줄여서** 쓴다(128 → 76px). 늘리면 흐려진다 — 블로거가 주는 후보가
+   32·64·128·256w 뿐이고 `sizes` 가 128px 이라 데스크톱에서는 128w 가 온다. */
+body:not(.item-view) .Blog .blog-posts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+/* 광고 자리는 격자 칸을 하나씩 차지한다 — 지금은 비어 있어서 빈 구멍으로 보인다 */
+body:not(.item-view) .Blog .blog-posts > .desktop-ad,
+body:not(.item-view) .Blog .blog-posts > .mobile-ad {
+  display: none;
+}
+body:not(.item-view) .Blog .blog-posts > .post-outer-container {
+  margin: 0;
+  padding: 12px;
+}
+body:not(.item-view) .Blog .blog-posts .post-outer {
+  margin: 0;
+  padding: 0;
+}
+/* 카드 안을 두 칸으로 — 왼쪽은 그림, 오른쪽은 제목·발췌·날짜.
+   그림과 발췌는 `.post-body` 안에 들어 있고 제목·날짜는 그 바깥이라, 넷을 한 격자에
+   놓으려면 그 껍데기를 `display: contents` 로 지워야 한다. */
+body:not(.item-view) .Blog .blog-posts .post {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  grid-template-areas: "thumb title" "thumb snip" "thumb date";
+  grid-template-rows: auto 1fr auto;
+  column-gap: 12px;
+  row-gap: 4px;
+}
+body:not(.item-view) .Blog .blog-posts .post > .post-body.entry-content {
+  display: contents;
+}
+body:not(.item-view) .Blog .blog-posts .post > a,
+body:not(.item-view) .Blog .blog-posts .post-share-buttons-top,
+body:not(.item-view) .Blog .blog-posts .post-bottom {
+  display: none;
+}
+body:not(.item-view) .Blog .blog-posts .post-title {
+  grid-area: title;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+body:not(.item-view) .Blog .blog-posts .post-title,
+body:not(.item-view) .Blog .blog-posts .post-title a {
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+body:not(.item-view) .Blog .blog-posts .snippet-thumbnail {
+  grid-area: thumb;
+  width: 76px;
+  height: 76px;
+  margin: 0;
+  float: none;
+}
+body:not(.item-view) .Blog .blog-posts .snippet-thumbnail img {
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+body:not(.item-view) .Blog .blog-posts .post-snippet {
+  grid-area: snip;
+  font-size: 13px;
+  line-height: 1.6;
+}
+/* 발췌는 두 줄에서 말줄임으로 끊는다. 테마는 이 자리를 **판 색 그라데이션**으로 덮어
+   흐려지게 만드는데(`.snippet-fade`), 그건 발췌가 카드 폭 전체를 쓰는 세로 목록에서만
+   맞는다 — 격자 카드에서는 그 조각이 글자 칸 밖에 떠서 점 세 개가 허공에 남는다. */
+body:not(.item-view) .Blog .blog-posts .post-snippet .snippet-item {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+body:not(.item-view) .Blog .blog-posts .post-snippet .snippet-fade {
+  display: none;
+}
+body:not(.item-view) .Blog .blog-posts .post-header {
+  grid-area: date;
+  margin: 0;
+}
+body:not(.item-view) .Blog .blog-posts .post-header .post-timestamp,
+body:not(.item-view) .Blog .blog-posts .post-header .timestamp-link,
+body:not(.item-view) .Blog .blog-posts .post-header .timestamp-link abbr {
+  font-size: 12px;
+  color: #6B7280;
+}
+/* 더보기·이전 글 줄은 격자 칸이 아니라 목록 아래 한 줄 */
+body:not(.item-view) .Blog .blog-pager,
+body:not(.item-view) .Blog .blog-posts > .blog-pager,
+body:not(.item-view) .Blog .blog-posts > .status-msg-wrap {
+  grid-column: 1 / -1;
+}
+@media (max-width: 860px) {
+  body:not(.item-view) .Blog .blog-posts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 카테고리 목록 머리줄 — `라벨이 생활정보인 게시물 표시`. 테마는 이 띠를 **검정 70%** 로
+   칠한다(라이브 실측 `rgba(0,0,0,.7)`). 크림 배경 위에 검은 띠가 하나 가로지르는 꼴이라,
+   네이버 카테고리 절의 담백한 머리줄과 정반대다. 색만 브랜드 값으로 옮긴다. */
+body .post-filter-message {
+  background-color: #FBE7D2;
+  color: #1E2430;
+}
+body .post-filter-message a, body .post-filter-message .search-label {
+  color: #B7391A;
+}
+
+/* 태그 칩 — 회색 알약을 크림 + 코랄 테두리로 */
+body .Label li, body .Label span.label-size, body .byline.post-labels a {
+  background-color: #FFF3E4;
+  border-color: #FF6B4A;
+}
+body .Label a, body .byline.post-labels a {
+  color: #1E2430;
+}
+
+/* 관련글·다음글 — 글 끝에서 다음 글로 넘어갈 손잡이. 30곳 중 관련글을 보여 주는 곳은
+   5곳뿐이라 밀도로는 흔치 않지만, 우리 약점이 글끼리 안 이어진다는 것이라 여기 건다. */
+body .widget.PopularPosts .post {
+  border: 1px solid #E8E0D2;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+body .blog-pager a {
+  border: 1px solid #FF6B4A;
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+
+/* 소개글 — 줄바꿈은 못 넣는다. Blogger 의 소개 칸이 한 줄짜리 <input type=text> 라서
+   HTML 규격상 값에서 개행이 지워진다(2026-08-25 실측, JS 로 넣어도 브라우저가 지웠다).
+   그래서 여기서 할 수 있는 건 줄 간격을 벌려 덩어리로 안 보이게 하는 것까지다.
+   문구를 짧게 쓰는 것이 진짜 해법이고, 그건 blogdeco 의 BLOGGER_ABOUT_MAX_CHARS 가 잡는다. */
+body .widget.Profile .profile-textblock .snippet-item {
+  line-height: 1.85;
+}
+body .widget.Profile .profile-snippet.snippet-container {
+  max-height: none;
+}
+body .widget.Profile .snippet-fade {
+  display: none;
+}
+
+/*! yomoso-brand end */
