@@ -1,0 +1,3 @@
+1080×1080 PNG 정보 카드를 생성해 저장했습니다. 내장 imagegen을 사용했습니다.
+
+FILE=/home/user/Share/issue-blog/yomoso-assets/cards/giian-love-ep5-program.png
